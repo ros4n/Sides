@@ -192,7 +192,7 @@ function Row({
     <div className="flex items-center gap-3 border-2 border-ink bg-paper p-2.5">
       <Avatar name={displayName(profile)} src={profile.avatar_url} size={40} />
       <div className="min-w-0 flex-1">
-        <p className="truncate font-mono font-bold">{displayName(profile)}</p>
+        <p className="truncate font-sans font-bold">{displayName(profile)}</p>
         <p className="truncate text-sm text-muted">@{profile.username}</p>
       </div>
       <div className="flex items-center gap-1">{children}</div>

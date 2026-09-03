@@ -97,7 +97,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
       <div>
         <Link
           href="/events"
-          className="font-mono text-mini uppercase tracking-widest text-ink-soft hover:underline"
+          className="font-sans text-mini uppercase tracking-widest text-ink-soft hover:underline"
         >
           ‹ Back to fixtures
         </Link>
@@ -139,7 +139,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
           </div>
         </div>
         {event.description && (
-          <p className="mt-4 whitespace-pre-wrap font-mono text-note leading-relaxed text-ink">
+          <p className="mt-4 whitespace-pre-wrap font-sans text-note leading-relaxed text-ink">
             {event.description}
           </p>
         )}

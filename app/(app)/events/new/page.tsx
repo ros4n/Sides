@@ -13,7 +13,7 @@ export default async function NewEventPage() {
           Team sheet — fill this in
         </p>
         <h1 className="zine-head text-3xl sm:text-4xl">Start a game</h1>
-        <p className="mt-1 font-mono text-note text-ink-soft">
+        <p className="mt-1 font-sans text-note text-ink-soft">
           You&apos;re the admin. Add players and hand out shuffle rights once it&apos;s made.
         </p>
         <div className="mt-5">

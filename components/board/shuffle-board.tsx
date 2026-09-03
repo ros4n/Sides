@@ -477,7 +477,7 @@ export function ShuffleBoard({
       <div className="flex flex-wrap items-end justify-between gap-3 border-b-2 border-ink pb-3">
         <div>
           <h1 className="zine-head text-3xl sm:text-4xl">Team sheet</h1>
-          <p className="font-mono text-mini uppercase tracking-widest text-ink-soft">
+          <p className="font-sans text-mini uppercase tracking-widest text-ink-soft">
             {totalPlayers} in · aiming for {playersPerTeam} a side ·{" "}
             <span className="border border-ink px-1">draft {version}</span>
           </p>
@@ -624,7 +624,7 @@ function PresenceStack({
         })}
       </div>
       {extra > 0 && (
-        <span className="font-mono text-mini text-ink-soft">+{extra}</span>
+        <span className="font-sans text-mini text-ink-soft">+{extra}</span>
       )}
       <span className="hidden font-display text-micro font-bold uppercase tracking-[0.12em] text-ink-soft sm:inline">
         {ordered.length} here
@@ -658,11 +658,11 @@ function LiveActivityBar({
       <span className="font-display text-mini font-extrabold uppercase tracking-[0.14em] text-ink">
         Stop press —
       </span>
-      <span className="font-mono text-note font-bold text-ink">
+      <span className="font-sans text-note font-bold text-ink">
         {names} {verb} shuffling the teams
       </span>
       {iAmShuffling && canShuffle && (
-        <span className="font-mono text-mini text-ink-soft">
+        <span className="font-sans text-mini text-ink-soft">
           · you&apos;re on it too, last change sticks
         </span>
       )}
@@ -715,7 +715,7 @@ function SheetShell({
         </span>
         <span
           className={cn(
-            "border px-1 font-mono text-micro font-bold",
+            "border px-1 font-sans text-micro font-bold",
             isTeam ? "border-riso-ink/60" : "border-ink",
             over && "border-alarm bg-alarm text-ink",
           )}
@@ -761,7 +761,7 @@ function Column({
       refCb={setNodeRef}
     >
       {userIds.length === 0 && (
-        <p className="m-auto font-mono text-mini uppercase tracking-widest text-ink-soft">
+        <p className="m-auto font-sans text-mini uppercase tracking-widest text-ink-soft">
           drop a name here
         </p>
       )}
@@ -801,7 +801,7 @@ function StaticColumn({
   return (
     <SheetShell title={title} teamNo={teamNo} count={userIds.length} capacity={capacity}>
       {userIds.length === 0 && (
-        <p className="m-auto font-mono text-mini uppercase tracking-widest text-ink-soft">
+        <p className="m-auto font-sans text-mini uppercase tracking-widest text-ink-soft">
           drop a name here
         </p>
       )}

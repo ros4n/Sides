@@ -13,15 +13,15 @@ const buttonVariants = cva(
           "stamp px-4 text-body hover:-rotate-1 hover:shadow-[3px_3px_0_rgba(28,24,19,0.3)]",
         // second-sheet block
         secondary:
-          "border-2 border-ink bg-paper-2 font-mono font-bold text-ink hover:bg-paper",
+          "border-2 border-ink bg-paper-2 font-sans font-bold text-ink hover:bg-paper",
         // fill-in-the-blank hairline
         outline:
-          "border border-ink bg-transparent font-mono text-ink hover:bg-paper-2",
+          "border border-ink bg-transparent font-sans text-ink hover:bg-paper-2",
         ghost:
-          "font-mono text-ink underline-offset-4 hover:bg-paper-2",
+          "font-sans text-ink underline-offset-4 hover:bg-paper-2",
         danger:
-          "border-2 border-alarm bg-transparent font-mono font-bold uppercase tracking-wide text-ink hover:bg-alarm/15",
-        link: "font-mono text-riso underline underline-offset-4 hover:opacity-80",
+          "border-2 border-alarm bg-transparent font-sans font-bold uppercase tracking-wide text-ink hover:bg-alarm/15",
+        link: "font-sans text-riso underline underline-offset-4 hover:opacity-80",
       },
       size: {
         sm: "h-8 px-3 text-note",

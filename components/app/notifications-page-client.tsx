@@ -68,7 +68,7 @@ export function NotificationsPageClient() {
                 )}
               />
               <div className="min-w-0 flex-1">
-                <p className="font-mono font-bold">{n.title}</p>
+                <p className="font-sans font-bold">{n.title}</p>
                 {n.body && <p className="text-sm text-muted">{n.body}</p>}
                 <p className="mt-1 text-xs text-muted">{formatRelative(n.created_at)}</p>
 
@@ -94,7 +94,7 @@ export function NotificationsPageClient() {
                   <Link
                     href={notificationHref(n)}
                     onClick={() => markRead(n.id)}
-                    className="mt-1 inline-block font-mono text-note font-bold text-riso underline underline-offset-4"
+                    className="mt-1 inline-block font-sans text-note font-bold text-riso underline underline-offset-4"
                   >
                     Open
                   </Link>

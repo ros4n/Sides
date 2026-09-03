@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Staatliches, Courier_Prime, Caveat } from "next/font/google";
+import { Staatliches, Courier_Prime, Caveat, Archivo } from "next/font/google";
 import { Toaster } from "sonner";
 import { ServiceWorkerRegister } from "@/components/pwa/sw-register";
 import "./globals.css";
@@ -20,6 +20,14 @@ const caveat = Caveat({
   variable: "--font-caveat",
   subsets: ["latin"],
   weight: ["400", "700"],
+  display: "swap",
+});
+// Running text / UI chrome — readable at small sizes where the typewriter face
+// struggles. Courier Prime stays on for team sheets, fixtures and field data.
+const archivo = Archivo({
+  variable: "--font-archivo",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
@@ -71,7 +79,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${shoulders.variable} ${courier.variable} ${caveat.variable} h-full`}
+      className={`${shoulders.variable} ${courier.variable} ${caveat.variable} ${archivo.variable} h-full`}
     >
       <body className="min-h-full">
         {/*
@@ -82,9 +90,10 @@ fanzine. Refuses the clean SaaS dashboard and the literal magnetic tactics board
 
 OWN-WORLD: Grained photocopy paper — warm by day, dark pulp at night. One riso
 blue in flat blocks carrying 30–60%; black toner ink; a fluoro-pink alarm for
-LIVE only. Big Shoulders Display caps at poster scale for headings; Courier
-Prime typewriter for every roster, list and field; Caveat only for biro
-annotations. Ornament is functional: staples at module corners, masking tape on
+LIVE only. Big Shoulders Display caps at poster scale for headings; Archivo for
+running text and UI chrome; Courier Prime typewriter for the team sheets,
+fixtures table and field data; Caveat only for biro annotations. Ornament is
+functional: staples at module corners, masking tape on
 a pinned game, a biro circle on what's yours, a rubber "CREW ONLY" stamp that
 is the visibility control. Team colour = flat riso block + hand number.
 

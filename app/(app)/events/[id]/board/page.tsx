@@ -58,7 +58,7 @@ export default async function BoardPage({
     <div className="space-y-4">
       <Link
         href={`/events/${event.id}`}
-        className="inline-flex items-center gap-1 font-mono text-mini uppercase tracking-widest text-ink-soft hover:underline"
+        className="inline-flex items-center gap-1 font-sans text-mini uppercase tracking-widest text-ink-soft hover:underline"
       >
         <ChevronLeft className="size-4" /> {event.title}
       </Link>

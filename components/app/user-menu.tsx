@@ -34,8 +34,8 @@ export function UserMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>
-          <div className="font-mono text-sm font-bold text-ink">{name}</div>
-          <div className="font-mono text-mini text-ink-soft">@{username}</div>
+          <div className="font-sans text-sm font-bold text-ink">{name}</div>
+          <div className="font-sans text-mini text-ink-soft">@{username}</div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>

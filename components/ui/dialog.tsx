@@ -60,7 +60,7 @@ export function DialogDescription({
 }: React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>) {
   return (
     <DialogPrimitive.Description
-      className={cn("font-mono text-note text-ink-soft", className)}
+      className={cn("font-sans text-note text-ink-soft", className)}
       {...props}
     />
   );

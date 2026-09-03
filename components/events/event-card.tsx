@@ -33,7 +33,7 @@ export function EventCard({ event }: { event: EventCardData }) {
           <VisStamp visibility={event.visibility} size="sm" />
         </div>
 
-        <p className="mt-1 font-mono text-note font-bold text-ink">
+        <p className="mt-1 font-sans text-note font-bold text-ink">
           {formatEventDate(event.starts_at)}
         </p>
 

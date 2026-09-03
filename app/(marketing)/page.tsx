@@ -44,7 +44,7 @@ export default function LandingPage() {
           <br />
           group-chat
         </h1>
-        <p className="mt-5 max-w-md font-mono text-note leading-relaxed text-ink">
+        <p className="mt-5 max-w-md font-sans text-note leading-relaxed text-ink">
           Pick a slot, invite the right people, and build balanced sides together
           on a board that updates for everyone watching. Then show up.
         </p>
@@ -65,7 +65,7 @@ export default function LandingPage() {
           <span className="font-display text-mini font-extrabold uppercase tracking-[0.14em]">
             Stop press —
           </span>{" "}
-          <span className="font-mono text-note font-bold">
+          <span className="font-sans text-note font-bold">
             Casey is shuffling the teams
           </span>
         </div>
@@ -81,7 +81,7 @@ export default function LandingPage() {
                   Team
                 </span>
               </p>
-              <ul className="ruled px-2 py-1.5 font-mono text-note">
+              <ul className="ruled px-2 py-1.5 font-sans text-note">
                 {(players as string[]).map((p) => (
                   <li key={p} className="my-1 border-2 border-ink bg-paper px-2 py-0.5">
                     {p}
@@ -107,7 +107,7 @@ export default function LandingPage() {
                 <c.icon className="size-3.5" /> {c.n}
               </p>
               <h3 className="zine-head text-xl">{c.title}</h3>
-              <p className="mt-1 font-mono text-note leading-relaxed text-ink-soft">
+              <p className="mt-1 font-sans text-note leading-relaxed text-ink-soft">
                 {c.body}
               </p>
             </article>

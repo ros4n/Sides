@@ -36,7 +36,7 @@ export function EmptyState({
         {title}
       </p>
       {description ? (
-        <p className="mt-1 max-w-sm font-mono text-note text-ink-soft">
+        <p className="mt-1 max-w-sm font-sans text-note text-ink-soft">
           {description}
         </p>
       ) : null}
@@ -48,7 +48,7 @@ export function EmptyState({
 export function FieldError({ children }: { children?: React.ReactNode }) {
   if (!children) return null;
   return (
-    <p className="flex items-start gap-1.5 border-2 border-alarm bg-alarm/10 px-2 py-1 font-mono text-note text-ink">
+    <p className="flex items-start gap-1.5 border-2 border-alarm bg-alarm/10 px-2 py-1 font-sans text-note text-ink">
       <X className="mt-0.5 size-3.5 shrink-0 stroke-[3] text-alarm" />
       <span>{children}</span>
     </p>

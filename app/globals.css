@@ -40,17 +40,20 @@
   --font-display: var(--font-shoulders), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-courier), ui-monospace, "Courier New", monospace;
   --font-hand: var(--font-caveat), ui-rounded, cursive;
-  --font-sans: var(--font-courier), ui-monospace, "Courier New", monospace;
+  /* Running text + UI chrome. Courier Prime (--font-mono) stays on team sheets,
+     fixtures tables and field data where the typewriter look carries meaning. */
+  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", sans-serif;
 
   /* Type ramp — four small steps + body (see DESIGN.md) */
-  --text-micro: 0.62rem;
-  --text-micro--line-height: 1;
-  --text-mini: 0.72rem;
-  --text-mini--line-height: 1.35;
-  --text-note: 0.82rem;
-  --text-note--line-height: 1.45;
-  --text-body: 0.95rem;
-  --text-body--line-height: 1.5;
+  --text-micro: 0.6875rem;
+  --text-micro--line-height: 1.25;
+  --text-mini: 0.8125rem;
+  --text-mini--line-height: 1.45;
+  --text-note: 0.9rem;
+  --text-note--line-height: 1.55;
+  --text-body: 1rem;
+  --text-body--line-height: 1.6;
 
   --radius: 3px;
 }
@@ -59,7 +62,7 @@
   --paper: #efe7d6;
   --paper-2: #e5dbc2;
   --ink: #1c1813;
-  --ink-soft: #5c5347;
+  --ink-soft: #473f33; /* darkened for small-text contrast on grained paper */
   --rule: #c7bda2;
   --riso: #2f39d6;
   --riso-ink: #f4efe0;
@@ -83,7 +86,7 @@
     --paper: #17140f;
     --paper-2: #211d15;
     --ink: #efe7d6;
-    --ink-soft: #a89d86;
+    --ink-soft: #bcb29b; /* lifted for small-text contrast on dark pulp */
     --rule: #3b3529;
     --riso: #5a63ff;
     --riso-ink: #0d0b07;
@@ -117,10 +120,16 @@ body {
   min-height: 100dvh;
   background-color: var(--paper);
   color: var(--ink);
-  font-family: var(--font-mono);
-  font-size: 15px;
-  line-height: 1.5;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Keep tabular figures where columns line up (team sheets, tables, times). */
+.font-mono,
+table {
   font-variant-numeric: tabular-nums;
 }
 
@@ -135,7 +144,7 @@ body::after {
   background-image: var(--grain);
   background-size: 320px 320px;
   mix-blend-mode: var(--grain-blend);
-  opacity: 0.62;
+  opacity: 0.3;
 }
 
 /* Native selects, wearing the world. */
@@ -152,7 +161,7 @@ select {
   background-size: 5px 5px, 5px 5px;
   background-repeat: no-repeat;
   padding: 0.25rem 1.6rem 0.25rem 0.5rem;
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: var(--text-note);
   color: var(--ink);
 }
@@ -205,8 +214,11 @@ a {
   font-family: var(--font-display);
   font-weight: 400;
   text-transform: uppercase;
-  letter-spacing: 0.005em;
-  line-height: 0.92;
+  letter-spacing: 0.015em;
+  /* Staatliches sets words very tight — open them up so small headings
+     ("Sign back in", card titles) don't read as one word. */
+  word-spacing: 0.16em;
+  line-height: 0.95;
   color: var(--ink);
 }
 
@@ -265,6 +277,7 @@ a {
   font-weight: 400;
   text-transform: uppercase;
   letter-spacing: 0.03em;
+  word-spacing: 0.12em;
   color: var(--riso-ink);
   background: var(--riso);
   border: 2px solid var(--ink);

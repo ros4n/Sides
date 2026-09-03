@@ -35,7 +35,7 @@ export function JoinInviteBanner({
 
   return (
     <div className="clip taped flex flex-wrap items-center justify-between gap-3 border-2 border-riso p-3 pt-5">
-      <p className="font-mono text-note">
+      <p className="font-sans text-note">
         <span className="mr-2 border-2 border-ink bg-riso px-1.5 font-display text-micro font-extrabold uppercase tracking-widest text-riso-ink">
           You&apos;re invited
         </span>

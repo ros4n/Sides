@@ -23,13 +23,24 @@ typography:
     fontFamily: "Staatliches, ui-sans-serif, system-ui, sans-serif"
     fontSize: "clamp(1.5rem, 13vw, 4rem)"
     fontWeight: 400
-    lineHeight: 0.92
-    letterSpacing: "0.005em"
+    lineHeight: 0.95
+    letterSpacing: "0.015em"
+    wordSpacing: "0.16em"
   body:
-    fontFamily: "'Courier Prime', ui-monospace, 'Courier New', monospace"
-    fontSize: "0.95rem"
+    # Running text + UI chrome. Readable at the small sizes where the
+    # typewriter face fell apart.
+    fontFamily: "Archivo, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif"
+    fontSize: "1rem"
     fontWeight: 400
-    lineHeight: 1.5
+    lineHeight: 1.6
+    letterSpacing: "normal"
+  data:
+    # Team sheets, the fixtures table, name-slips and field-data rows
+    # (date / venue / format) — the typewriter carries the "roster" meaning here.
+    fontFamily: "'Courier Prime', ui-monospace, 'Courier New', monospace"
+    fontSize: "0.9rem"
+    fontWeight: 400
+    lineHeight: 1.55
     letterSpacing: "normal"
   label:
     fontFamily: "Staatliches, ui-sans-serif, system-ui, sans-serif"

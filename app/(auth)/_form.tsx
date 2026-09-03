@@ -82,7 +82,7 @@ export function AuthForm({
           <SubmitButton label={isSignIn ? "Sign in" : "Sign up"} />
         </form>
 
-        <p className="mt-4 text-center font-mono text-note text-ink-soft">
+        <p className="mt-4 text-center font-sans text-note text-ink-soft">
           {isSignIn ? (
             <>
               First time?{" "}

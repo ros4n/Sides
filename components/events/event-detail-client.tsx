@@ -171,10 +171,10 @@ export function EventDetailClient({
           {isAdmin && (
             <label className="flex items-center justify-between gap-3 border-2 border-ink bg-paper-2 p-2.5">
               <span className="min-w-0">
-                <span className="block font-mono text-note font-bold">
+                <span className="block font-sans text-note font-bold">
                   Anyone in the game can shuffle
                 </span>
-                <span className="block font-mono text-mini text-ink-soft">
+                <span className="block font-sans text-mini text-ink-soft">
                   Every player can move name-slips between teams. Watchers can&apos;t.
                 </span>
               </span>
@@ -186,7 +186,7 @@ export function EventDetailClient({
             </label>
           )}
           {!isAdmin && everyoneCanShuffle && myRole && myRole !== "watcher" && (
-            <p className="border-2 border-dashed border-ink bg-paper-2 p-2 font-mono text-mini text-ink-soft">
+            <p className="border-2 border-dashed border-ink bg-paper-2 p-2 font-sans text-mini text-ink-soft">
               Everyone in this game can shuffle the teams.
             </p>
           )}
@@ -201,7 +201,7 @@ export function EventDetailClient({
               >
                 <Avatar name={name} src={m.profile?.avatar_url} size={38} />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-mono font-bold">
+                  <p className="truncate font-sans font-bold">
                     {name}
                     {m.user_id === meId && (
                       <span className="text-muted"> (you)</span>
@@ -452,7 +452,7 @@ function InvitePanel({
               >
                 <Avatar name={displayName(p)} src={p.avatar_url} size={34} />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-mono text-note font-bold">{displayName(p)}</p>
+                  <p className="truncate font-sans text-note font-bold">{displayName(p)}</p>
                   <p className="truncate text-xs text-muted">@{p.username}</p>
                 </div>
                 <Button size="sm" variant="outline" disabled={disabled} onClick={() => invite(p.id, "player")}>

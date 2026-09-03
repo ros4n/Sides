@@ -19,7 +19,7 @@ export default async function MarketingLayout({ children }: LayoutProps<"/">) {
               Sides
             </span>
           </Link>
-          <span className="hidden flex-1 items-center border-x-2 border-ink px-3 font-mono text-mini uppercase tracking-[0.2em] text-ink-soft sm:flex">
+          <span className="hidden flex-1 items-center border-x-2 border-ink px-3 font-sans text-mini uppercase tracking-[0.2em] text-ink-soft sm:flex">
             Issue №1 · {issueDate}
           </span>
           <div className="flex flex-1 items-center justify-end gap-2 px-2 sm:flex-none">
@@ -42,7 +42,7 @@ export default async function MarketingLayout({ children }: LayoutProps<"/">) {
       </header>
       <main className="flex-1">{children}</main>
       <footer className="border-t-2 border-ink">
-        <div className="mx-auto max-w-4xl px-4 py-6 font-mono text-mini text-ink-soft">
+        <div className="mx-auto max-w-4xl px-4 py-6 font-sans text-mini text-ink-soft">
           Printed for pickup crews. Your games stay private by default —
           nobody outside the list can see one, find one, or know it happened.
         </div>

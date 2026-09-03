@@ -110,7 +110,7 @@ export function NewEventForm() {
               <span className="flex items-center gap-1.5 font-display text-note font-extrabold uppercase tracking-wide">
                 <o.icon className="size-4" /> {o.title}
               </span>
-              <span className="font-mono text-mini opacity-80">{o.desc}</span>
+              <span className="font-sans text-mini opacity-80">{o.desc}</span>
             </label>
           ))}
         </div>

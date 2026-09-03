@@ -117,7 +117,7 @@ export default async function DashboardPage() {
                 <p className="zine-head text-xl">
                   {(unread ?? 0) > 0 ? `${unread} new notice${unread === 1 ? "" : "s"}` : "All caught up"}
                 </p>
-                <p className="mt-1 font-mono text-note text-ink-soft">
+                <p className="mt-1 font-sans text-note text-ink-soft">
                   Invites, roster changes and kickoff reminders.
                 </p>
               </div>
@@ -194,7 +194,7 @@ function NextClip({
         </div>
       )}
       {lead && lead.pool.length > 0 && (
-        <p className="mt-2 font-mono text-note text-ink-soft">
+        <p className="mt-2 font-sans text-note text-ink-soft">
           <span className="font-display font-bold uppercase tracking-wide text-ink">
             Not picked:{" "}
           </span>

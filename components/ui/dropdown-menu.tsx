@@ -28,7 +28,7 @@ export function DropdownMenuContent({
       <DropdownMenuPrimitive.Content
         sideOffset={sideOffset}
         className={cn(
-          "anim-pin z-50 min-w-[12rem] border-2 border-ink bg-paper-2 p-1 font-mono text-note shadow-[3px_4px_0_rgba(28,24,19,0.25)]",
+          "anim-pin z-50 min-w-[12rem] border-2 border-ink bg-paper-2 p-1 font-sans text-note shadow-[3px_4px_0_rgba(28,24,19,0.25)]",
           className,
         )}
         {...props}

@@ -42,7 +42,7 @@ export function NotificationBell() {
           {unread > 0 && (
             <button
               onClick={markAllRead}
-              className="font-mono text-mini text-paper underline underline-offset-2"
+              className="font-sans text-mini text-paper underline underline-offset-2"
             >
               Mark all read
             </button>
@@ -50,7 +50,7 @@ export function NotificationBell() {
         </div>
         <div className="max-h-96 overflow-y-auto">
           {recent.length === 0 ? (
-            <p className="px-3 py-8 text-center font-mono text-note text-ink-soft">
+            <p className="px-3 py-8 text-center font-sans text-note text-ink-soft">
               Nothing filed yet.
             </p>
           ) : (
@@ -69,13 +69,13 @@ export function NotificationBell() {
                     <span className="mt-1.5 size-2 shrink-0 bg-alarm" />
                   )}
                   <div className={cn(n.read_at && "pl-4")}>
-                    <p className="font-mono text-note font-bold text-ink">
+                    <p className="font-sans text-note font-bold text-ink">
                       {n.title}
                     </p>
                     {n.body && (
-                      <p className="font-mono text-note text-ink-soft">{n.body}</p>
+                      <p className="font-sans text-note text-ink-soft">{n.body}</p>
                     )}
-                    <p className="mt-0.5 font-mono text-micro uppercase tracking-wide text-ink-soft">
+                    <p className="mt-0.5 font-sans text-micro uppercase tracking-wide text-ink-soft">
                       {formatRelative(n.created_at)}
                     </p>
                   </div>
