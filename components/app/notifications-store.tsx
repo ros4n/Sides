@@ -46,21 +46,22 @@ export function notificationHref(n: Notification): string {
 }
 
 export function NotificationsProvider({
-  userId,
   initialItems,
   initialUnread,
   children,
 }: {
-  userId: string;
-  initialItems: Notification[];
-  initialUnread: number;
+  /** Omit to have the provider fetch the list client-side on mount (keeps the
+   *  server layout off the notifications query, so navigation isn't blocked). */
+  initialItems?: Notification[];
+  initialUnread?: number;
   children: React.ReactNode;
 }) {
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
-  const [items, setItems] = useState<Notification[]>(initialItems);
-  const [unread, setUnread] = useState(initialUnread);
-  const seen = useRef(new Set(initialItems.map((i) => i.id)));
+  const [items, setItems] = useState<Notification[]>(initialItems ?? []);
+  const [unread, setUnread] = useState(initialUnread ?? 0);
+  const [userId, setUserId] = useState<string | null>(null);
+  const seen = useRef(new Set((initialItems ?? []).map((i) => i.id)));
 
   const refresh = useCallback(async () => {
     const { data } = await supabase
@@ -75,7 +76,26 @@ export function NotificationsProvider({
     }
   }, [supabase]);
 
+  // Resolve the signed-in user id client-side (the layout no longer passes it)
+  // and, if the layout didn't hand us an initial list, pull it once on mount —
+  // both kept off the server render so navigation isn't blocked.
+  const needsHydration = useRef(initialItems === undefined);
   useEffect(() => {
+    let cancelled = false;
+    void supabase.auth.getClaims().then(({ data }) => {
+      if (!cancelled) setUserId(data?.claims?.sub ?? null);
+    });
+    if (needsHydration.current) {
+      needsHydration.current = false;
+      void refresh();
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [supabase, refresh]);
+
+  useEffect(() => {
+    if (!userId) return;
     const channel = supabase
       .channel("notifications:me")
       .on(

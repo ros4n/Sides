@@ -19,10 +19,9 @@ export async function completeProfileAction(
   formData: FormData,
 ): Promise<OnboardingState> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/sign-in");
+  const { data: claims } = await supabase.auth.getClaims();
+  const userId = claims?.claims?.sub;
+  if (!userId) redirect("/sign-in");
 
   const parsed = schema.safeParse({
     username: formData.get("username"),
@@ -38,7 +37,7 @@ export async function completeProfileAction(
     if (file.size > 2 * 1024 * 1024) return { error: "Avatar must be under 2 MB" };
     if (!file.type.startsWith("image/")) return { error: "Avatar must be an image" };
     const ext = file.name.split(".").pop()?.toLowerCase() || "png";
-    const path = `${user.id}/avatar-${Date.now()}.${ext}`;
+    const path = `${userId}/avatar-${Date.now()}.${ext}`;
     const { error: upErr } = await supabase.storage
       .from("avatars")
       .upload(path, file, { upsert: true, contentType: file.type });
@@ -53,7 +52,7 @@ export async function completeProfileAction(
       display_name: parsed.data.display_name || parsed.data.username,
       ...(avatarUrl ? { avatar_url: avatarUrl } : {}),
     })
-    .eq("id", user.id);
+    .eq("id", userId);
 
   if (error) {
     if (error.code === "23505") return { error: "That username is taken" };

@@ -24,10 +24,9 @@ export async function createEventAction(
   formData: FormData,
 ): Promise<EventFormState> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/sign-in");
+  const { data: claims } = await supabase.auth.getClaims();
+  const userId = claims?.claims?.sub;
+  if (!userId) redirect("/sign-in");
 
   const parsed = eventSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
@@ -40,7 +39,7 @@ export async function createEventAction(
   const { data: event, error } = await supabase
     .from("events")
     .insert({
-      creator_id: user.id,
+      creator_id: userId,
       title: d.title,
       venue: d.venue || null,
       description: d.description || null,

@@ -14,15 +14,15 @@ export const metadata: Metadata = { title: "Set up your profile" };
 
 export default async function OnboardingPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/sign-in");
+  const { data: claims } = await supabase.auth.getClaims();
+  const userId = claims?.claims?.sub;
+  if (!userId) redirect("/sign-in");
+  const email = (claims?.claims?.email as string | undefined) ?? "";
 
   const { data: profile } = await supabase
     .from("profiles")
     .select("username")
-    .eq("id", user.id)
+    .eq("id", userId)
     .maybeSingle();
   if (profile?.username) redirect("/dashboard");
 
@@ -40,7 +40,7 @@ export default async function OnboardingPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <OnboardingForm email={user.email ?? ""} />
+            <OnboardingForm email={email} />
           </CardContent>
         </Card>
       </div>

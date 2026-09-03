@@ -1,34 +1,25 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { format } from "date-fns";
 import { requireProfile } from "@/lib/data";
-import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { ContentsStrip, BottomStrip } from "@/components/app/app-nav";
 import { NotificationBell } from "@/components/app/notification-bell";
 import { UserMenu } from "@/components/app/user-menu";
 import { NotificationsProvider } from "@/components/app/notifications-store";
 
-export default async function AppLayout({ children }: LayoutProps<"/">) {
-  const { user, profile } = await requireProfile();
-  const supabase = await createClient();
-
-  const { data: initialItems } = await supabase
-    .from("notifications")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .limit(40);
-
-  const unread = (initialItems ?? []).filter((n) => !n.read_at).length;
-  const name = profile.display_name || profile.username || "Player";
+/**
+ * This layout renders its shell synchronously — no top-level `await` on runtime
+ * data — so `loading.tsx` paints instantly on navigation. The only piece that
+ * needs the DB (the masthead avatar/menu) resolves inside its own <Suspense>,
+ * and the notifications list is fetched client-side by NotificationsProvider.
+ */
+export default function AppLayout({ children }: LayoutProps<"/">) {
   const issueDate = format(new Date(), "EEE d MMM yyyy").toUpperCase();
 
   return (
-    <NotificationsProvider
-      userId={user.id}
-      initialItems={initialItems ?? []}
-      initialUnread={unread}
-    >
+    <NotificationsProvider>
       <div className="flex min-h-dvh flex-col">
         {/* ---- Masthead ---- */}
         <header className="sticky top-0 z-40 border-b-2 border-ink bg-paper">
@@ -54,11 +45,9 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
                 </Link>
               </Button>
               <NotificationBell />
-              <UserMenu
-                name={name}
-                username={profile.username ?? ""}
-                avatarUrl={profile.avatar_url}
-              />
+              <Suspense fallback={<MastheadUserFallback />}>
+                <MastheadUser />
+              </Suspense>
             </div>
           </div>
           {/* stamped issue date */}
@@ -82,5 +71,31 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
         <BottomStrip />
       </div>
     </NotificationsProvider>
+  );
+}
+
+/**
+ * The one bit of the masthead that needs the DB. Also carries the onboarding
+ * gate (`requireProfile` redirects to /onboarding) for the whole (app) segment,
+ * including routes whose page body doesn't call it (e.g. /notifications).
+ */
+async function MastheadUser() {
+  const { profile } = await requireProfile();
+  const name = profile.display_name || profile.username || "Player";
+  return (
+    <UserMenu
+      name={name}
+      username={profile.username ?? ""}
+      avatarUrl={profile.avatar_url}
+    />
+  );
+}
+
+function MastheadUserFallback() {
+  return (
+    <div
+      className="size-[34px] shrink-0 animate-pulse border-2 border-ink bg-paper-2"
+      aria-hidden
+    />
   );
 }

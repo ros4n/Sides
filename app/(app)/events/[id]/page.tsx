@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CalendarDays, MapPin, Users, Shuffle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { requireProfile } from "@/lib/data";
+import { getEventById, requireProfile } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatEventDate } from "@/lib/format";
@@ -16,13 +16,8 @@ export async function generateMetadata({
   params,
 }: PageProps<"/events/[id]">): Promise<Metadata> {
   const { id } = await params;
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("events")
-    .select("title")
-    .eq("id", id)
-    .maybeSingle();
-  return { title: data?.title ?? "Event" };
+  const event = await getEventById(id);
+  return { title: event?.title ?? "Event" };
 }
 
 export default async function EventPage({ params }: PageProps<"/events/[id]">) {
@@ -30,15 +25,11 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
   const { user } = await requireProfile();
   const supabase = await createClient();
 
-  const { data: event } = await supabase
-    .from("events")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
-  if (!event) notFound();
-
-  const [{ data: memberRows }, { data: inviteRows }, { data: myInvite }] =
+  // The event row and the member/invite rows only depend on the route param, so
+  // fetch them in one round instead of the event first, then the rest.
+  const [event, { data: memberRows }, { data: inviteRows }, { data: myInvite }] =
     await Promise.all([
+      getEventById(id),
       supabase
         .from("event_members")
         .select("user_id, role, can_shuffle, can_invite, joined_at")
@@ -57,6 +48,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
         .eq("status", "pending")
         .maybeSingle(),
     ]);
+  if (!event) notFound();
 
   const members = memberRows ?? [];
   const invites = inviteRows ?? [];

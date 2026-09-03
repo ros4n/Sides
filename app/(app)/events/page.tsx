@@ -26,17 +26,16 @@ export default async function EventsPage() {
   const { user } = await requireProfile();
   const supabase = await createClient();
 
-  const { data: events } = await supabase
-    .from("events")
-    .select(
-      "id, title, venue, starts_at, visibility, status, team_count, players_per_team, creator_id",
-    )
-    .order("starts_at", { ascending: true });
-
-  const { data: myMemberships } = await supabase
-    .from("event_members")
-    .select("event_id, role")
-    .eq("user_id", user.id);
+  // Independent queries — fire together instead of one after the other.
+  const [{ data: events }, { data: myMemberships }] = await Promise.all([
+    supabase
+      .from("events")
+      .select(
+        "id, title, venue, starts_at, visibility, status, team_count, players_per_team, creator_id",
+      )
+      .order("starts_at", { ascending: true }),
+    supabase.from("event_members").select("event_id, role").eq("user_id", user.id),
+  ]);
   const roleByEvent = new Map((myMemberships ?? []).map((m) => [m.event_id, m.role]));
 
   const now = Date.now();

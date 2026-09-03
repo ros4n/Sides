@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import type { Database } from "./database.types";
 
-/** Routes that require an authenticated, onboarded user. */
+/** Routes that require an authenticated user. */
 const PROTECTED_PREFIXES = [
   "/dashboard",
   "/friends",
@@ -15,7 +15,11 @@ const AUTH_PAGES = ["/sign-in", "/sign-up"];
 
 /**
  * Refreshes the Supabase session on every request (so Server Components always
- * see a fresh token) and gates protected routes.
+ * see a fresh token) and gates protected routes on authentication only.
+ *
+ * The "has this user finished onboarding?" check used to live here too, which
+ * meant a second Supabase round-trip on *every* navigation. That check now runs
+ * once in the `(app)` segment via `requireProfile()`, keeping Proxy fast.
  *
  * Called from the root `proxy.ts`.
  */
@@ -43,10 +47,15 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  // IMPORTANT: do not run code between createServerClient and getUser().
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // IMPORTANT: do not run code between createServerClient and getClaims().
+  //
+  // getClaims() verifies the access-token JWT *locally* via WebCrypto when the
+  // project uses an asymmetric signing key (Auth -> JWT Keys) — no network call.
+  // It still refreshes the session cookie when the token is close to expiry.
+  // Falls back to a getUser()-style network check if the project is still on the
+  // legacy symmetric secret, so this is safe to ship before migrating keys.
+  const { data } = await supabase.auth.getClaims();
+  const isAuthed = Boolean(data?.claims?.sub);
 
   const { pathname } = request.nextUrl;
   const isProtected = PROTECTED_PREFIXES.some(
@@ -54,42 +63,18 @@ export async function updateSession(request: NextRequest) {
   );
   const isAuthPage = AUTH_PAGES.some((p) => pathname.startsWith(p));
 
-  if (!user && isProtected) {
+  if (!isAuthed && isProtected) {
     const url = request.nextUrl.clone();
     url.pathname = "/sign-in";
     url.searchParams.set("next", pathname);
     return NextResponse.redirect(url);
   }
 
-  if (user && isAuthPage) {
+  if (isAuthed && isAuthPage) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     url.search = "";
     return NextResponse.redirect(url);
-  }
-
-  // Nudge signed-in users without a completed profile to onboarding.
-  if (user && (isProtected || pathname === "/onboarding")) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("username")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    const onboarded = Boolean(profile?.username);
-
-    if (!onboarded && pathname !== "/onboarding") {
-      const url = request.nextUrl.clone();
-      url.pathname = "/onboarding";
-      url.search = "";
-      return NextResponse.redirect(url);
-    }
-    if (onboarded && pathname === "/onboarding") {
-      const url = request.nextUrl.clone();
-      url.pathname = "/dashboard";
-      url.search = "";
-      return NextResponse.redirect(url);
-    }
   }
 
   return response;
