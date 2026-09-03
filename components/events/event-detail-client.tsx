@@ -68,6 +68,10 @@ export function EventDetailClient({
   const isAdmin = myRole === "admin";
   const [pending, start] = useTransition();
 
+  // "Anyone in the game can shuffle" — read straight from the server row; the
+  // toggle below writes it and refreshes, same as the per-member permissions.
+  const everyoneCanShuffle = event.everyone_can_shuffle;
+
   useEffect(() => {
     const ch = supabase
       .channel(`event-detail:${event.id}`)
@@ -99,6 +103,15 @@ export function EventDetailClient({
         router.refresh();
       }
     });
+  }
+
+  function toggleEveryoneCanShuffle(v: boolean) {
+    act(
+      supabase.from("events").update({ everyone_can_shuffle: v }).eq("id", event.id),
+      v
+        ? "Anyone in the game can shuffle now"
+        : "Shuffle limited to admins and picked players",
+    );
   }
 
   return (
@@ -155,6 +168,29 @@ export function EventDetailClient({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
+          {isAdmin && (
+            <label className="flex items-center justify-between gap-3 border-2 border-ink bg-paper-2 p-2.5">
+              <span className="min-w-0">
+                <span className="block font-mono text-note font-bold">
+                  Anyone in the game can shuffle
+                </span>
+                <span className="block font-mono text-mini text-ink-soft">
+                  Every player can move name-slips between teams. Watchers can&apos;t.
+                </span>
+              </span>
+              <Switch
+                checked={everyoneCanShuffle}
+                disabled={pending}
+                onCheckedChange={toggleEveryoneCanShuffle}
+              />
+            </label>
+          )}
+          {!isAdmin && everyoneCanShuffle && myRole && myRole !== "watcher" && (
+            <p className="border-2 border-dashed border-ink bg-paper-2 p-2 font-mono text-mini text-ink-soft">
+              Everyone in this game can shuffle the teams.
+            </p>
+          )}
+
           {members.map((m) => {
             const name = m.profile ? displayName(m.profile) : "Unknown";
             const isEventCreator = m.user_id === event.creator_id;
@@ -180,9 +216,11 @@ export function EventDetailClient({
                   <Badge variant={m.role === "admin" ? "ink" : m.role === "watcher" ? "outline" : "riso"}>
                     {m.role}
                   </Badge>
-                  {m.can_shuffle && m.role !== "admin" && (
-                    <Badge variant="outline">can shuffle</Badge>
-                  )}
+                  {(m.can_shuffle || everyoneCanShuffle) &&
+                    m.role !== "admin" &&
+                    m.role !== "watcher" && (
+                      <Badge variant="outline">can shuffle</Badge>
+                    )}
                   {m.can_invite && m.role !== "admin" && (
                     <Badge variant="outline">can invite</Badge>
                   )}
@@ -192,6 +230,7 @@ export function EventDetailClient({
                   <MemberMenu
                     member={m}
                     disabled={pending}
+                    everyoneCanShuffle={everyoneCanShuffle}
                     onRole={(role) =>
                       act(
                         supabase.rpc("update_event_member", {
@@ -268,12 +307,14 @@ export function EventDetailClient({
 function MemberMenu({
   member,
   disabled,
+  everyoneCanShuffle,
   onRole,
   onToggle,
   onRemove,
 }: {
   member: MemberRow;
   disabled: boolean;
+  everyoneCanShuffle: boolean;
   onRole: (role: string) => void;
   onToggle: (field: "can_shuffle" | "can_invite", value: boolean) => void;
   onRemove: () => void;
@@ -298,10 +339,19 @@ function MemberMenu({
         ))}
         <DropdownMenuSeparator />
         <div className="flex items-center justify-between px-2 py-1.5 text-sm">
-          <span>Can shuffle</span>
+          <span>
+            Can shuffle
+            {everyoneCanShuffle && member.role !== "watcher" && (
+              <span className="block text-mini text-ink-soft">On for everyone</span>
+            )}
+          </span>
           <Switch
-            checked={member.role === "admin" || member.can_shuffle}
-            disabled={member.role === "admin"}
+            checked={
+              member.role === "admin" ||
+              member.can_shuffle ||
+              (everyoneCanShuffle && member.role !== "watcher")
+            }
+            disabled={member.role === "admin" || everyoneCanShuffle}
             onCheckedChange={(v) => onToggle("can_shuffle", v)}
           />
         </div>

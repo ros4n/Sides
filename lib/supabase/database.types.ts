@@ -119,6 +119,7 @@ export type Database = {
           creator_id: string
           description: string | null
           duration_min: number
+          everyone_can_shuffle: boolean
           id: string
           players_per_team: number
           reminded_at: string | null
@@ -135,6 +136,7 @@ export type Database = {
           creator_id: string
           description?: string | null
           duration_min?: number
+          everyone_can_shuffle?: boolean
           id?: string
           players_per_team?: number
           reminded_at?: string | null
@@ -151,6 +153,7 @@ export type Database = {
           creator_id?: string
           description?: string | null
           duration_min?: number
+          everyone_can_shuffle?: boolean
           id?: string
           players_per_team?: number
           reminded_at?: string | null

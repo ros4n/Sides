@@ -49,7 +49,10 @@ export default async function BoardPage({
     for (const p of ps ?? []) profiles[p.id] = p;
   }
 
-  const canShuffle = me?.role === "admin" || me?.can_shuffle === true;
+  const canShuffle =
+    me?.role === "admin" ||
+    me?.can_shuffle === true ||
+    (event.everyone_can_shuffle && !!me && me.role !== "watcher");
 
   return (
     <div className="space-y-4">
