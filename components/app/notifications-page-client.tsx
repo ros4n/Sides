@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Bell, Check } from "lucide-react";
+import { Bell, Check, Trash2, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/misc";
@@ -16,7 +16,8 @@ import {
 } from "@/components/app/notifications-store";
 
 export function NotificationsPageClient() {
-  const { items, unread, markAllRead, markRead } = useNotifications();
+  const { items, unread, markAllRead, markRead, remove, clearAll } =
+    useNotifications();
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -43,13 +44,23 @@ export function NotificationsPageClient() {
 
   return (
     <div className="space-y-3">
-      {unread > 0 && (
-        <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
+        {unread > 0 && (
           <Button variant="outline" size="sm" onClick={markAllRead}>
             <Check /> Mark all read
           </Button>
-        </div>
-      )}
+        )}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-alarm"
+          onClick={() => {
+            if (confirm("Delete all notifications?")) void clearAll();
+          }}
+        >
+          <Trash2 /> Clear all
+        </Button>
+      </div>
       <ul className="divide-y divide-dashed divide-rule border-2 border-ink">
         {items.map((n) => {
           const inviteId =
@@ -100,6 +111,14 @@ export function NotificationsPageClient() {
                   </Link>
                 )}
               </div>
+              <button
+                type="button"
+                aria-label="Delete notification"
+                onClick={() => void remove(n.id)}
+                className="-m-1 h-7 w-7 shrink-0 self-start rounded-[2px] text-ink-soft hover:bg-alarm hover:text-ink"
+              >
+                <X className="mx-auto size-4" />
+              </button>
             </li>
           );
         })}

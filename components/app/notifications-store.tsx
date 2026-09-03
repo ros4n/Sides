@@ -21,6 +21,8 @@ type Ctx = {
   unread: number;
   markAllRead: () => Promise<void>;
   markRead: (id: string) => Promise<void>;
+  remove: (id: string) => Promise<void>;
+  clearAll: () => Promise<void>;
   refresh: () => Promise<void>;
 };
 
@@ -151,9 +153,37 @@ export function NotificationsProvider({
     [supabase],
   );
 
+  const remove = useCallback(
+    async (id: string) => {
+      let wasUnread = false;
+      setItems((prev) => {
+        wasUnread = prev.some((i) => i.id === id && !i.read_at);
+        return prev.filter((i) => i.id !== id);
+      });
+      if (wasUnread) setUnread((u) => Math.max(0, u - 1));
+      seen.current.delete(id);
+      const { error } = await supabase.from("notifications").delete().eq("id", id);
+      if (error) void refresh(); // put it back if the delete failed
+    },
+    [supabase, refresh],
+  );
+
+  const clearAll = useCallback(async () => {
+    const ids = items.map((i) => i.id);
+    if (!ids.length) return;
+    setItems([]);
+    setUnread(0);
+    seen.current = new Set();
+    const { error } = await supabase
+      .from("notifications")
+      .delete()
+      .in("id", ids);
+    if (error) void refresh();
+  }, [supabase, items, refresh]);
+
   const value = useMemo(
-    () => ({ items, unread, markAllRead, markRead, refresh }),
-    [items, unread, markAllRead, markRead, refresh],
+    () => ({ items, unread, markAllRead, markRead, remove, clearAll, refresh }),
+    [items, unread, markAllRead, markRead, remove, clearAll, refresh],
   );
 
   return (

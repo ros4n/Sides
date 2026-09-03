@@ -870,12 +870,12 @@ function NameSlip({
   return (
     <div
       className={cn(
-        "relative flex items-center gap-2 border-2 bg-paper px-2 py-1",
+        "relative flex items-center gap-2 border-2 bg-paper px-2 py-1.5",
         overlay && "-rotate-2 scale-[1.04] shadow-[3px_8px_14px_rgba(0,0,0,0.28)]",
       )}
       style={edge ? { borderColor: edge } : { borderColor: "var(--ink)" }}
     >
-      <Avatar name={displayName(profile)} src={profile.avatar_url} size={22} plain className="border border-ink" />
+      <Avatar name={displayName(profile)} src={profile.avatar_url} size={28} plain className="border border-ink" />
       <span className="truncate font-mono text-note font-bold text-ink">
         {displayName(profile)}
       </span>

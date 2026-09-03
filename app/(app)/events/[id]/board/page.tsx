@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getEventById, requireProfile } from "@/lib/data";
 import type { ProfileLite } from "@/lib/friends";
 import { ShuffleBoard } from "@/components/board/shuffle-board";
+import { BoardChat, type BoardMessage } from "@/components/board/board-chat";
 
 export const metadata: Metadata = { title: "Shuffle board" };
 
@@ -17,35 +18,50 @@ export default async function BoardPage({
   const supabase = await createClient();
 
   // All keyed by the route param — one round, not the event first then the rest.
-  const [event, { data: me }, { data: assignments }, { data: state }] =
-    await Promise.all([
-      getEventById(id),
-      supabase
-        .from("event_members")
-        .select("role, can_shuffle")
-        .eq("event_id", id)
-        .eq("user_id", user.id)
-        .maybeSingle(),
-      supabase
-        .from("team_assignments")
-        .select("user_id, team_index, slot")
-        .eq("event_id", id),
-      supabase
-        .from("shuffle_state")
-        .select("version, active_editor_id, editor_expires_at")
-        .eq("event_id", id)
-        .maybeSingle(),
-    ]);
+  const [
+    event,
+    { data: members },
+    { data: assignments },
+    { data: state },
+    { data: messageRows },
+  ] = await Promise.all([
+    getEventById(id),
+    supabase.from("event_members").select("user_id, role, can_shuffle").eq("event_id", id),
+    supabase
+      .from("team_assignments")
+      .select("user_id, team_index, slot")
+      .eq("event_id", id),
+    supabase
+      .from("shuffle_state")
+      .select("version, active_editor_id, editor_expires_at")
+      .eq("event_id", id)
+      .maybeSingle(),
+    supabase
+      .from("event_messages")
+      .select("id, user_id, body, created_at")
+      .eq("event_id", id)
+      .order("created_at", { ascending: false })
+      .limit(50),
+  ]);
   if (!event) notFound();
 
+  const me = (members ?? []).find((m) => m.user_id === user.id) ?? null;
+  const adminIds = (members ?? [])
+    .filter((m) => m.role === "admin")
+    .map((m) => m.user_id);
+  const messages: BoardMessage[] = (messageRows ?? []).slice().reverse();
+
   const rows = assignments ?? [];
-  const ids = rows.map((r) => r.user_id);
+  const ids = new Set<string>([
+    ...rows.map((r) => r.user_id),
+    ...messages.map((m) => m.user_id),
+  ]);
   const profiles: Record<string, ProfileLite> = {};
-  if (ids.length) {
+  if (ids.size) {
     const { data: ps } = await supabase
       .from("profiles")
       .select("id, username, display_name, avatar_url")
-      .in("id", ids);
+      .in("id", [...ids]);
     for (const p of ps ?? []) profiles[p.id] = p;
   }
 
@@ -76,6 +92,15 @@ export default async function BoardPage({
         initialVersion={state?.version ?? 0}
         initialEditorId={state?.active_editor_id ?? null}
         initialEditorExpiresAt={state?.editor_expires_at ?? null}
+      />
+
+      <BoardChat
+        eventId={event.id}
+        meId={user.id}
+        adminIds={adminIds}
+        canPost={Boolean(me)}
+        initialMessages={messages}
+        initialProfiles={profiles}
       />
     </div>
   );
