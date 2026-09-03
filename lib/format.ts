@@ -16,6 +16,8 @@ export function formatEventDate(iso: string) {
 }
 
 export function formatRelative(iso: string) {
+  const diffSec = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (diffSec < 60) return "less than a minute ago";
   return formatDistanceToNowStrict(new Date(iso), { addSuffix: true });
 }
 

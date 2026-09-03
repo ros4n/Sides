@@ -105,6 +105,29 @@ export function EventDetailClient({
     });
   }
 
+  function leaveGame() {
+    if (
+      !confirm(
+        "Leave this game? You'll drop off the team sheet and need a new invite to rejoin.",
+      )
+    )
+      return;
+    start(async () => {
+      const { error } = await supabase.rpc("remove_event_member", {
+        _event: event.id,
+        _user: meId,
+      });
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      toast.success("You left the game");
+      // The event may no longer be visible to us — go somewhere that still is
+      // instead of refreshing into a 404.
+      router.replace("/events");
+    });
+  }
+
   function toggleEveryoneCanShuffle(v: boolean) {
     act(
       supabase.from("events").update({ everyone_can_shuffle: v }).eq("id", event.id),
@@ -274,15 +297,7 @@ export function EventDetailClient({
               size="sm"
               className="text-alarm"
               disabled={pending}
-              onClick={() =>
-                act(
-                  supabase.rpc("remove_event_member", {
-                    _event: event.id,
-                    _user: meId,
-                  }),
-                  "You left the game",
-                )
-              }
+              onClick={leaveGame}
             >
               Leave game
             </Button>

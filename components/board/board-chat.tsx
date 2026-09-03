@@ -9,7 +9,7 @@ import {
   type FormEvent,
 } from "react";
 import { toast } from "sonner";
-import { Megaphone, Send } from "lucide-react";
+import { Megaphone, Send, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { ProfileLite } from "@/lib/friends";
 import { displayName } from "@/lib/friends";
@@ -44,6 +44,7 @@ export function BoardChat({
 }) {
   const supabase = useMemo(() => createClient(), []);
   const admins = useMemo(() => new Set(adminIds), [adminIds]);
+  const canModerate = admins.has(meId); // event admin — may delete any message
 
   const [messages, setMessages] = useState<BoardMessage[]>(initialMessages);
   const [profiles, setProfiles] =
@@ -98,6 +99,14 @@ export function BoardChat({
           void ensureProfiles([row.user_id]);
         },
       )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "event_messages" },
+        (payload) => {
+          const goneId = (payload.old as { id?: string }).id;
+          if (goneId) setMessages((prev) => prev.filter((m) => m.id !== goneId));
+        },
+      )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
@@ -143,6 +152,16 @@ export function BoardChat({
     }
   }
 
+  async function deleteMessage(id: string) {
+    const prev = messages;
+    setMessages((list) => list.filter((m) => m.id !== id)); // optimistic
+    const { error } = await supabase.from("event_messages").delete().eq("id", id);
+    if (error) {
+      setMessages(prev); // put it back
+      toast.error(error.message);
+    }
+  }
+
   return (
     <section className="stapled relative border-2 border-ink bg-paper-2">
       <header className="flex items-center gap-2 border-b-2 border-ink bg-ink px-3 py-1.5">
@@ -170,8 +189,9 @@ export function BoardChat({
             const name = p ? displayName(p) : "Someone";
             const isMe = m.user_id === meId;
             const isAdmin = admins.has(m.user_id);
+            const canDelete = canModerate || isMe;
             return (
-              <div key={m.id} className="flex items-start gap-2">
+              <div key={m.id} className="group flex items-start gap-2">
                 <Avatar
                   name={name}
                   src={p?.avatar_url}
@@ -202,6 +222,16 @@ export function BoardChat({
                     {m.body}
                   </p>
                 </div>
+                {canDelete && (
+                  <button
+                    type="button"
+                    aria-label="Delete message"
+                    onClick={() => void deleteMessage(m.id)}
+                    className="mt-0.5 shrink-0 rounded-[2px] p-0.5 text-ink-soft opacity-0 hover:bg-alarm hover:text-ink focus-visible:opacity-100 group-hover:opacity-100"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                )}
               </div>
             );
           })
