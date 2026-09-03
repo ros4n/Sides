@@ -162,6 +162,23 @@ export function BoardChat({
     }
   }
 
+  async function clearChat() {
+    if (!messages.length) return;
+    if (!confirm("Delete every message in this chat? This can't be undone.")) return;
+    const prev = messages;
+    setMessages([]); // optimistic
+    const { error } = await supabase
+      .from("event_messages")
+      .delete()
+      .eq("event_id", eventId);
+    if (error) {
+      setMessages(prev);
+      toast.error(error.message);
+    } else {
+      toast.success("Chat cleared");
+    }
+  }
+
   return (
     <section className="stapled relative border-2 border-ink bg-paper-2">
       <header className="flex items-center gap-2 border-b-2 border-ink bg-ink px-3 py-1.5">
@@ -172,6 +189,15 @@ export function BoardChat({
         <span className="ml-auto font-sans text-micro text-paper/70">
           {messages.length ? `${messages.length} message${messages.length === 1 ? "" : "s"}` : "quiet"}
         </span>
+        {canModerate && messages.length > 0 && (
+          <button
+            type="button"
+            onClick={() => void clearChat()}
+            className="font-display text-micro font-bold uppercase tracking-[0.12em] text-paper/70 underline underline-offset-2 hover:text-alarm"
+          >
+            Clear
+          </button>
+        )}
       </header>
 
       <div
