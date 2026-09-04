@@ -42,3 +42,7 @@ next-env.d.ts
 
 # impeccable skill scratch/artifacts
 .impeccable/
+
+# local one-off scripts that embed service-role keys — never commit
+apply-migrations.mjs
+.claude/
