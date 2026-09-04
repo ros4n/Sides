@@ -85,7 +85,18 @@ export function ShuffleBoard({
   const [profiles, setProfiles] = useState<Record<string, ProfileLite>>(initialProfiles);
   const [version, setVersion] = useState(initialVersion);
   const versionRef = useRef(version);
-  versionRef.current = version;
+  // Sync the ref from an effect — never mutate it during render. A ref torn
+  // during React 19 concurrent rendering fed stale base versions into
+  // commit_shuffle retries, so they never converged (shuffle retry-storm).
+  useEffect(() => {
+    versionRef.current = version;
+  }, [version]);
+
+  type Move = { user_id: string; team_index: number | null; slot: number | null };
+  const commitInFlight = useRef(false);
+  const queuedMoves = useRef<Move[] | null>(null);
+  const hiddenSkip = useRef(false);
+  const commitRef = useRef<((m: Move[]) => Promise<void>) | null>(null);
 
   const [editorId, setEditorId] = useState(initialEditorId);
   const [editorExpires, setEditorExpires] = useState(initialEditorExpiresAt);
@@ -182,10 +193,27 @@ export function ShuffleBoard({
     }
     if (state) {
       setVersion(state.version);
+      // Update the ref directly so a retry in the same tick rebases on the
+      // server's version instead of waiting for the sync effect to run.
+      versionRef.current = state.version;
       setEditorId(state.active_editor_id);
       setEditorExpires(state.editor_expires_at);
     }
   }, [supabase, eventId, ensureProfiles]);
+
+  // A backgrounded tab / installed PWA must never push commits. When it comes
+  // back to the foreground, pull server truth instead of replaying stale moves.
+  useEffect(() => {
+    function onVisibility() {
+      if (document.hidden) return;
+      if (hiddenSkip.current) {
+        hiddenSkip.current = false;
+        void resync();
+      }
+    }
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [resync]);
 
   // Realtime wiring
   useEffect(() => {
@@ -392,41 +420,64 @@ export function ShuffleBoard({
   }
 
   const commit = useCallback(
-    async (moves: { user_id: string; team_index: number | null; slot: number | null }[]) => {
+    async (moves: Move[]) => {
+      // Never push from a backgrounded tab. A wedged hidden client looping
+      // commit_shuffle is exactly what pinned prod DB CPU; keep the optimistic
+      // local state and reconcile via resync() on visibilitychange.
+      if (typeof document !== "undefined" && document.hidden) {
+        hiddenSkip.current = true;
+        return;
+      }
+      // Coalesce: if a commit is already running, remember only the latest
+      // batch and flush it once the in-flight one settles.
+      if (commitInFlight.current) {
+        queuedMoves.current = moves;
+        return;
+      }
+      commitInFlight.current = true;
       setBusy(true);
       try {
-        const { data, error } = await supabase.rpc("commit_shuffle", {
-          _event: eventId,
-          _moves: moves,
-          _base_version: versionRef.current,
-        });
-        if (error) {
-          if (error.code === "40001" || /stale/i.test(error.message)) {
-            await resync();
-            const { data: retry, error: retryErr } = await supabase.rpc("commit_shuffle", {
-              _event: eventId,
-              _moves: moves,
-              _base_version: versionRef.current,
-            });
-            if (retryErr) {
-              toast.error("Board changed — please try that move again.");
-              await resync();
-            } else if (typeof retry === "number") {
-              setVersion(retry);
-            }
-          } else {
+        const MAX_ATTEMPTS = 3;
+        for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+          const { data, error } = await supabase.rpc("commit_shuffle", {
+            _event: eventId,
+            _moves: moves,
+            _base_version: versionRef.current,
+          });
+          if (!error) {
+            if (typeof data === "number") setVersion(data);
+            break;
+          }
+          const stale = error.code === "40001" || /stale/i.test(error.message);
+          if (!stale) {
             toast.error(error.message);
             await resync();
+            break;
           }
-        } else if (typeof data === "number") {
-          setVersion(data);
+          // Rebase on the server's version (resync updates versionRef directly)
+          // and retry with a capped exponential backoff — then give up so a
+          // stuck client can't hammer the RPC forever.
+          await resync();
+          if (attempt === MAX_ATTEMPTS) {
+            toast.error("Board changed — please try that move again.");
+            break;
+          }
+          await new Promise((r) => setTimeout(r, 250 * 3 ** (attempt - 1)));
         }
       } finally {
+        commitInFlight.current = false;
         setBusy(false);
+        const queued = queuedMoves.current;
+        queuedMoves.current = null;
+        if (queued) void commitRef.current?.(queued);
       }
     },
     [supabase, eventId, resync],
   );
+
+  useEffect(() => {
+    commitRef.current = commit;
+  }, [commit]);
 
   async function autoShuffle() {
     if (!canShuffle) return;
