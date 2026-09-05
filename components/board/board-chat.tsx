@@ -253,10 +253,20 @@ export function BoardChat({
   async function deleteMessage(id: string) {
     const prev = messages;
     setMessages((list) => list.filter((m) => m.id !== id)); // optimistic
-    const { error } = await supabase.from("event_messages").delete().eq("id", id);
+    // RLS silently drops rows the caller isn't allowed to delete — no error,
+    // just zero rows affected. .select() is the only way to see that, so
+    // chain it and treat "nothing came back" as a failure, not a no-op.
+    const { data, error } = await supabase
+      .from("event_messages")
+      .delete()
+      .eq("id", id)
+      .select("id");
     if (error) {
       setMessages(prev); // put it back
       toast.error(error.message);
+    } else if (!data?.length) {
+      setMessages(prev);
+      toast.error("Couldn't delete that message — missing permission.");
     }
   }
 
@@ -265,13 +275,27 @@ export function BoardChat({
     if (!confirm("Delete every message in this chat? This can't be undone.")) return;
     const prev = messages;
     setMessages([]); // optimistic
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("event_messages")
       .delete()
-      .eq("event_id", eventId);
+      .eq("event_id", eventId)
+      .select("id");
     if (error) {
       setMessages(prev);
       toast.error(error.message);
+      return;
+    }
+    const deletedIds = new Set((data ?? []).map((r) => r.id));
+    const survivors = prev.filter((m) => !deletedIds.has(m.id));
+    if (survivors.length) {
+      // Some rows weren't ours to delete (e.g. the admin-delete-any RLS
+      // policy is missing in this environment) — don't claim success.
+      setMessages(survivors);
+      toast.error(
+        deletedIds.size === 0
+          ? "Nothing was deleted — you may be missing admin permissions for this event."
+          : `Cleared ${deletedIds.size} of ${prev.length} messages — the rest couldn't be deleted.`,
+      );
     } else {
       toast.success("Chat cleared");
     }
