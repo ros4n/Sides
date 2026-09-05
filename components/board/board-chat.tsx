@@ -6,16 +6,27 @@ import {
   useMemo,
   useRef,
   useState,
+  type ChangeEvent,
   type FormEvent,
 } from "react";
 import { toast } from "sonner";
 import { Megaphone, Send, X } from "lucide-react";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import type { ProfileLite } from "@/lib/friends";
-import { displayName } from "@/lib/friends";
+import { displayName, firstName } from "@/lib/friends";
 import { formatRelative } from "@/lib/format";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+
+type Typing = { name: string; at: number };
+// How long a "typing" broadcast is trusted before it's pruned — covers a
+// closed tab / lost network that never sent the stop_typing broadcast.
+const TYPING_TTL = 4000;
+// Pause after the last keystroke before we tell everyone else typing stopped.
+const TYPING_STOP_DELAY = 2000;
+// Floor between repeated "typing" broadcasts while someone keeps typing.
+const TYPING_RESEND_INTERVAL = 1500;
 
 export type BoardMessage = {
   id: string;
@@ -29,6 +40,7 @@ const MAX = 500;
 export function BoardChat({
   eventId,
   meId,
+  meName,
   adminIds,
   canPost,
   initialMessages,
@@ -36,6 +48,7 @@ export function BoardChat({
 }: {
   eventId: string;
   meId: string;
+  meName: string;
   adminIds: string[];
   /** false for a non-member who can only view the event. */
   canPost: boolean;
@@ -51,9 +64,13 @@ export function BoardChat({
     useState<Record<string, ProfileLite>>(initialProfiles);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
+  const [typing, setTyping] = useState<Record<string, Typing>>({});
 
   const listRef = useRef<HTMLDivElement | null>(null);
   const atBottom = useRef(true);
+  const channelRef = useRef<RealtimeChannel | null>(null);
+  const lastTypingSentAt = useRef(0);
+  const stopTypingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const ensureProfiles = useCallback(
     async (ids: string[]) => {
@@ -97,6 +114,13 @@ export function BoardChat({
             prev.some((m) => m.id === row.id) ? prev : [...prev, row],
           );
           void ensureProfiles([row.user_id]);
+          // They just sent a message, so they're no longer "typing".
+          setTyping((t) => {
+            if (!t[row.user_id]) return t;
+            const next = { ...t };
+            delete next[row.user_id];
+            return next;
+          });
         },
       )
       .on(
@@ -107,11 +131,84 @@ export function BoardChat({
           if (goneId) setMessages((prev) => prev.filter((m) => m.id !== goneId));
         },
       )
+      .on("broadcast", { event: "typing" }, ({ payload }) => {
+        if (payload.by === meId) return;
+        setTyping((t) => ({ ...t, [payload.by]: { name: payload.name, at: Date.now() } }));
+      })
+      .on("broadcast", { event: "stop_typing" }, ({ payload }) => {
+        setTyping((t) => {
+          if (!t[payload.by]) return t;
+          const next = { ...t };
+          delete next[payload.by];
+          return next;
+        });
+      })
       .subscribe();
+
+    channelRef.current = channel;
     return () => {
+      if (stopTypingTimer.current) clearTimeout(stopTypingTimer.current);
+      channel.send({ type: "broadcast", event: "stop_typing", payload: { by: meId } });
       supabase.removeChannel(channel);
+      channelRef.current = null;
     };
-  }, [supabase, eventId, ensureProfiles]);
+  }, [supabase, eventId, meId, ensureProfiles]);
+
+  // Prune a typing indicator whose stop_typing broadcast never arrived
+  // (closed tab, dropped connection).
+  useEffect(() => {
+    const t = setInterval(() => {
+      const now = Date.now();
+      setTyping((prev) => {
+        let changed = false;
+        const next: Record<string, Typing> = {};
+        for (const [id, v] of Object.entries(prev)) {
+          if (now - v.at < TYPING_TTL) next[id] = v;
+          else changed = true;
+        }
+        return changed ? next : prev;
+      });
+    }, 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  const typingList = useMemo(() => Object.values(typing), [typing]);
+  const typingLabel = useMemo(() => {
+    if (typingList.length === 0) return null;
+    if (typingList.length === 1) return `${firstName(typingList[0].name)} is typing`;
+    if (typingList.length === 2)
+      return `${firstName(typingList[0].name)} & ${firstName(typingList[1].name)} are typing`;
+    return `${firstName(typingList[0].name)} +${typingList.length - 1} are typing`;
+  }, [typingList]);
+
+  function notifyTyping() {
+    const channel = channelRef.current;
+    if (!channel) return;
+    const now = Date.now();
+    if (now - lastTypingSentAt.current > TYPING_RESEND_INTERVAL) {
+      lastTypingSentAt.current = now;
+      channel.send({ type: "broadcast", event: "typing", payload: { by: meId, name: meName } });
+    }
+    if (stopTypingTimer.current) clearTimeout(stopTypingTimer.current);
+    stopTypingTimer.current = setTimeout(() => {
+      channelRef.current?.send({ type: "broadcast", event: "stop_typing", payload: { by: meId } });
+    }, TYPING_STOP_DELAY);
+  }
+
+  function notifyStoppedTyping() {
+    if (stopTypingTimer.current) {
+      clearTimeout(stopTypingTimer.current);
+      stopTypingTimer.current = null;
+    }
+    channelRef.current?.send({ type: "broadcast", event: "stop_typing", payload: { by: meId } });
+  }
+
+  function onChangeText(e: ChangeEvent<HTMLInputElement>) {
+    const value = e.target.value;
+    setText(value);
+    if (value.trim()) notifyTyping();
+    else notifyStoppedTyping();
+  }
 
   function onScroll() {
     const el = listRef.current;
@@ -129,6 +226,7 @@ export function BoardChat({
     }
     setSending(true);
     setText("");
+    notifyStoppedTyping();
     atBottom.current = true;
     try {
       const { data, error } = await supabase
@@ -264,6 +362,27 @@ export function BoardChat({
         )}
       </div>
 
+      {typingLabel && (
+        <p className="flex items-center gap-1.5 border-t border-rule px-3 py-1 font-sans text-micro italic text-ink-soft">
+          {typingLabel}
+          <span className="flex items-end gap-0.5" aria-hidden="true">
+            <span
+              className="typing-dot size-1 rounded-full bg-ink-soft"
+              style={{ animationDelay: "0ms" }}
+            />
+            <span
+              className="typing-dot size-1 rounded-full bg-ink-soft"
+              style={{ animationDelay: "150ms" }}
+            />
+            <span
+              className="typing-dot size-1 rounded-full bg-ink-soft"
+              style={{ animationDelay: "300ms" }}
+            />
+          </span>
+          <span className="sr-only">…</span>
+        </p>
+      )}
+
       {canPost ? (
         <form
           onSubmit={send}
@@ -271,7 +390,8 @@ export function BoardChat({
         >
           <input
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={onChangeText}
+            onBlur={notifyStoppedTyping}
             maxLength={MAX}
             placeholder="Message the crew…"
             className="h-9 flex-1 border-0 border-b-2 border-ink bg-transparent px-1 font-sans text-note text-ink placeholder:text-ink-soft focus-visible:border-riso focus-visible:outline-none"

@@ -97,6 +97,7 @@ export default async function BoardPage({
       <BoardChat
         eventId={event.id}
         meId={user.id}
+        meName={profile.display_name || profile.username || "You"}
         adminIds={adminIds}
         canPost={Boolean(me)}
         initialMessages={messages}

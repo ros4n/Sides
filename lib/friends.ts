@@ -35,3 +35,7 @@ export function shapeFriendships(
 export function displayName(p: ProfileLite) {
   return p.display_name || p.username || "Player";
 }
+
+export function firstName(name: string) {
+  return name.trim().split(/\s+/)[0] || name;
+}

@@ -25,7 +25,7 @@ import { Shuffle, Eraser } from "lucide-react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import type { ProfileLite } from "@/lib/friends";
-import { displayName } from "@/lib/friends";
+import { displayName, firstName } from "@/lib/friends";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,10 +40,6 @@ type HeldMap = Record<string, Held>;
 /* One riso blue for every team; they're told apart by the hand-drawn number,
    never by hue (direction contract; colour is never the only carrier). */
 const MARK = "var(--alarm)"; // fluoro-pink = something is LIVE right now
-
-function firstName(name: string) {
-  return name.trim().split(/\s+/)[0] || name;
-}
 
 export function ShuffleBoard({
   eventId,

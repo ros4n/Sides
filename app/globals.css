@@ -337,6 +337,9 @@ a {
   .anim-peel {
     animation: peel 0.14s ease-out both;
   }
+  .typing-dot {
+    animation: typing-bounce 1.1s ease-in-out infinite;
+  }
 }
 
 @keyframes pin-in {
@@ -357,6 +360,19 @@ a {
   to {
     transform: rotate(-2.5deg) scale(1.03);
     box-shadow: 3px 8px 14px color-mix(in srgb, var(--ink) 28%, transparent);
+  }
+}
+/* Three dots bouncing in sequence — "someone's typing" in the board chat. */
+@keyframes typing-bounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-3px);
+    opacity: 1;
   }
 }
 @keyframes flap-in {
