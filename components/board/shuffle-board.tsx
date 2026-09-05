@@ -150,9 +150,18 @@ export function ShuffleBoard({
     return [...ids].map((id) => ({ id, name: nameOf(id) }));
   }, [editorLockFresh, editorId, meId, heldBy, pulse, now, nameOf]);
 
+  // Read via a ref (not the `profiles` dep) so this callback's identity is
+  // stable — it's a dep of the realtime-wiring effect below, and churning it
+  // on every profile fetch was tearing down and resubscribing that channel
+  // (and re-firing release_shuffle_editor) each time.
+  const profilesRef = useRef(profiles);
+  useEffect(() => {
+    profilesRef.current = profiles;
+  }, [profiles]);
+
   const ensureProfiles = useCallback(
     async (ids: string[]) => {
-      const missing = ids.filter((id) => !profiles[id]);
+      const missing = ids.filter((id) => !profilesRef.current[id]);
       if (!missing.length) return;
       const { data } = await supabase
         .from("profiles")
@@ -166,7 +175,7 @@ export function ShuffleBoard({
         });
       }
     },
-    [profiles, supabase],
+    [supabase],
   );
 
   const resync = useCallback(async () => {

@@ -72,9 +72,18 @@ export function BoardChat({
   const lastTypingSentAt = useRef(0);
   const stopTypingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Read via a ref (not the `profiles` dep) so this callback's identity is
+  // stable — it's a dep of the realtime-wiring effect below, and churning it
+  // on every profile fetch was tearing down and resubscribing that channel
+  // (and re-sending a stop_typing broadcast) each time.
+  const profilesRef = useRef(profiles);
+  useEffect(() => {
+    profilesRef.current = profiles;
+  }, [profiles]);
+
   const ensureProfiles = useCallback(
     async (ids: string[]) => {
-      const missing = [...new Set(ids)].filter((id) => !profiles[id]);
+      const missing = [...new Set(ids)].filter((id) => !profilesRef.current[id]);
       if (!missing.length) return;
       const { data } = await supabase
         .from("profiles")
@@ -88,7 +97,7 @@ export function BoardChat({
         });
       }
     },
-    [profiles, supabase],
+    [supabase],
   );
 
   // Keep the log pinned to the newest message unless the reader scrolled up.
